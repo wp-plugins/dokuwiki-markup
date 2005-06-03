@@ -1,0 +1,36 @@
+INSTALATION
+-----------
+
+I guess that if you are reading this you already downloaded and extracted
+the files from the tarball :)
+
+So what's next...
+
+  * Install the plugin
+  * Install the css
+  * Create links
+  * Copy images
+  
+ 
+INSTALLATION STEPS
+
+1) Copy the doku directory into the wordpress plugins directory
+
+   cp -R /path/to/doku /path/to/wordpress/wp-content/plugins
+
+2) Append the doku css to the wordpress theme's css.
+
+   cat /path/to/wordpress/wp-content/plugins/doku/doku-style.css >>
+       /path/to/wordpress/wp-content/themes/current-theme/style.css
+
+3) Create the links to the smilies and images directories
+
+   cd /path/to/wordpress
+   ln -s /path/to/wordpress/wp-content/plugins/doku/smileys .
+   ln -s /path/to/wordpress/wp-content/plugins/doku/media .
+
+4) copy all images in doku/images to /path/to/wordpress/wp-content/themes/current-theme/images/
+
+That's it!
+Enjoy the power of the dokuwiki Markup
+

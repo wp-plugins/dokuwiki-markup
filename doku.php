@@ -8,44 +8,58 @@ Version: 0.1
 Author URI: http://alunos.uevora.pt/~l15243/
 */ 
 
+
+/* ---------- YOU CAN CHANGE THIS IF YOU WANT -------- */
+
+global $OpenTag;
+global $CloseTag;
+
+$OpenTag = "<wiki>";
+$CloseTag = "</wiki>";
+
+
+
+/* --------- Do Not edit anything beyond this point ------ 
+             ( unless you know what you're doing )         */
+ 
+
+
+
 require_once('parser.php');
 
-
 function tb_parse_entry($content) {
+
+    extract($GLOBALS);
     
-    $needle = "<wiki>";
-    
-    if ( strstr($content, $needle) === FALSE) {
+    if ( strstr($content, $OpenTag) === FALSE) {
 	return $content;
     }                                                                                    
     else{
-	/* Replace </wiki> with <wiki> to use with explode */
-	$content = str_replace("</wiki>", "<wiki>", $content);
-	 
-	$subStrings = explode("<wiki>", $content);
+
+	$first = strpos($content, $OpenTag);
+	$last = strrpos($content, $CloseTag);
+	$TagSize = strlen($OpenTag);
+
+	/* Non Wiki code... This does not get formated by wp */
+	echo substr($content, 0, $first);
 	
-	if (count($subStrings) != 0)
-	{
-	    /* Non Wiki code... This does not get formated by wp */
-	    echo $subStrings[0];
-	    
-	    /* Prepare the contents */
-	    $textlines = split("\n",$subStrings[1]);
-	    for ($l=0; $l<count($textlines); $l++){                                                                      
-		/* Remove '\r' */
-		$line = rtrim($textlines[$l]);
-		$text = $text . $line."\n";
-	    }
-	
-	    /* Parse the wiki code */
-	    echo parse($text);
-	    
-	    /* Non wiki code */
-	    echo $subStrings[2];
-	    
-	    $content="";
-	    return $content;
+	/* Prepare the contents */
+	$wikicode = substr($content, ($first+$TagSize), ($last-$TagSize));
+	$textlines = split("\n",$wikicode);
+	for ($l=0; $l<count($textlines); $l++){                                                                      
+	    /* Remove '\r' */
+	    $line = rtrim($textlines[$l]);
+	    $text = $text . $line."\n";
 	}
+	
+	/* Parse the wiki code */
+	echo parse($text);
+	    
+	/* Non wiki code */
+	echo substr($content, $last);
+	
+	$content="";
+	return $content;
 	
     }
 }
