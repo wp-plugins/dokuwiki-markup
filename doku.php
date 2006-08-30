@@ -47,32 +47,49 @@ function tb_parse_entry($content) {
   if ( strstr($content, $OpenTag) === FALSE) {
     return $content;
   } else {
-    /* Take care of the wiki code */
-    $before_wiki = strpos($content, $OpenTag);
-    $after_wiki = strrpos($content, $CloseTag);
-    $TagSize = strlen($OpenTag);
-    
-    /* Non Wiki code... This does not get formated by wp */
-    echo substr($content, 0, $before_wiki);
-    
-    /* Prepare the contents */
-    $wikicode = substr($content, ($before_wiki+$TagSize), ($after_wiki-$before_wiki-$TagSize));
-    $textlines = split("\n",$wikicode);
-    for ($l=0; $l<count($textlines); $l++){                                                                      
-      /* Remove '\r' */
-      $line = rtrim($textlines[$l]);
-      $text = $text . $line."\n";
-    }
-    
-    echo parse($text);
-
-    /* Non Wiki code (found after the </wiki> tag */
-    echo substr($content, $after_wiki);
-    
-    $content="";
-    return $content;
+    /* There are wiki tags */
+    tb_parse_wiki($content);    
   }
+
+  $content="";
+  return $content;
 }
+
+function tb_parse_wiki($content){
+  extract($GLOBALS);
+
+  /* Take care of the wiki code */
+  $before_wiki = strpos($content, $OpenTag);
+  $after_wiki = strpos($content, $CloseTag);
+  $TagSize = strlen($OpenTag);
+  
+  /* Non Wiki code... This does not get formated by wp */
+  echo substr($content, 0, $before_wiki);
+  
+  /* Prepare the contents */
+  $wikicode = substr($content, ($before_wiki+$TagSize), ($after_wiki-$before_wiki-$TagSize));
+  $textlines = split("\n",$wikicode);
+  for ($l=0; $l<count($textlines); $l++){                                                                      
+    /* Remove '\r' */
+    $line = rtrim($textlines[$l]);
+    $text = $text . $line."\n";
+  }
+  
+  echo parse($text);
+  
+  /* Non Wiki code (found after the </wiki> tag */
+  $remaining = substr($content, $after_wiki+$TagSize+1);
+  if (strstr($remaining, $OpenTag) === FALSE)
+    {
+      /* There are no more tags */
+      echo $remaining;
+    }
+  else
+    {
+      tb_parse_wiki($remaining);
+    }
+}
+
 /* Don't close tags... It breaks the <me@mail.com> */
 remove_filter('content_save_pre','balanceTags', 50);
 

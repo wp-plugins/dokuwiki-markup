@@ -17,6 +17,7 @@ $path = dirname(__FILE__);
 
 /* TB - Geocaching */
 require_once("geocaching.php");
+
 require_once("common.php");
 require_once("format.php");
 require_once (ABSPATH . 'wp-includes/template-functions-post.php');
@@ -49,22 +50,49 @@ function parse($text){
   $any  = $ltrs.$gunk.$punc;
 
   /* first pass */
-  /* TB - Geocaching XML parser */
 
-  if (preg_match('#<geocaching>(.*?)</geocaching>#is',$text,$match)) {
-    /* Get the HTML */
-    $new_text = parse_geocaching($match[0]);
-  }
-  /* Update text */
-  $text = preg_replace('#<geocaching>(.*?)</geocaching>#is',$new_text, $text);
-  
-  /* end fo Geocaching XML parser */
-   
+    /* TB - Geocaching XML parser */    
+    if (preg_match('#<geocaching>(.*?)</geocaching>#is',$text,$match)) 
+    {
+	/* Get the HTML */
+	$new_text = parse_geocaching($match[0]);
+    }
+    /* Update text */
+    $text = preg_replace('#<geocaching>(.*?)</geocaching>#is', $new_text, $text);
+
+    /* end of Geocaching XML parser */
+
+
+  // Moves Day
+    while (preg_match('#<movesday>(.*?)</movesday>#is',$text, $match)){
+
+      $movesreplacement = "{{mascote_pixel.png}} <html><small>This Week's Movie is: </small></html> ".$match[1];
+      $text = preg_replace('#<movesday>(.*?)</movesday>#is', $movesreplacement, $text,1);
+    }
+    
+    // Quotation
+    while (preg_match('#<quote>(.*?)</quote>#is',$text, $match)){	
+	$quotereplacement = "<html><blockquote>".$match[1]."</blockquote><br></html>";
+	$text = preg_replace('#<quote>(.*?)</quote>#is', $quotereplacement, $text,1);
+    }
+    
+    
+    
   //preformated texts
   firstpass($table,$text,"#<nowiki>(.*?)</nowiki>#se","preformat('\\1','nowiki')");
   firstpass($table,$text,"#%%(.*?)%%#se","preformat('\\1','nowiki')");
   firstpass($table,$text,"#<code( (\w+))?>(.*?)</code>#se","preformat('\\3','code','\\2')");
   firstpass($table,$text,"#<file>(.*?)</file>#se","preformat('\\1','file')");
+
+    /* TB - Toggle Text */  
+    while (preg_match('#<toggle>(.*?)<title>(.*?)</title>(.*?)<text>(.*?)</text>(.*?)</toggle>#is',$text,$match)) 
+    {
+      $id = uniqid(rand(), true);
+      $replacement = "<html><h3><a href=\"javascript: toggle_tb('".$id."');\">\n".trim($match[2])."</a></h3>
+<small>(Click on the title to hide/show the article)</small>\n<br><br><div id=".$id." style=\"display: none\"></html>".$match[4]."<html></div><br>\n\n</html>";	
+      $text = preg_replace('#<toggle>(.*?)<title>(.*?)</title>(.*?)<text>(.*?)</text>(.*?)</toggle>#is', $replacement, $text, 1);    
+    }
+
 
   // html and php includes
   firstpass($table,$text,"#<html>(.*?)</html>#se","preformat('\\1','html')");
@@ -72,11 +100,11 @@ function parse($text){
 
   // codeblocks
   firstpass($table,$text,"/(\n( {2,}|\t)[^\*\-\n ][^\n]+)(\n( {2,}|\t)[^\n]*)*/se","preformat('\\0','block')","\n");
+
+    
+
+   $text = htmlspecialchars($text);
   
-  
-
-
-
   //check if toc is wanted
     //  if(!isset($parser['toc'])){
     //   if(strpos($text,'~~NOTOC~~')!== false){
@@ -129,11 +157,9 @@ function parse($text){
     firstpass($table,$text,"#(\b)([A-Z]+[a-z]+[A-Z][A-Za-z]*)(\b)#se","linkformat('\\2')",'\1','\3');
   }
 
-  
 
   
-
-  $text = htmlspecialchars($text);
+    
 
   //smileys
   smileys($table,$text);
@@ -143,7 +169,6 @@ function parse($text){
 
   //acronyms
   acronyms($table,$text);
-  
 
   /* second pass for simple formating */
   $text = simpleformat($text);
@@ -153,6 +178,9 @@ function parse($text){
   while (list($key, $val) = each($table)) {
     $text = str_replace($key,$val,$text);
   }
+
+    
+    
 
 
   /* remove empty paragraphs */
@@ -424,7 +452,7 @@ function simpleformat($text){
   //sub and superscript
   $text = preg_replace('#&lt;sub&gt;(.*?)&lt;/sub&gt;#is','<sub>\1</sub>',$text);
   $text = preg_replace('#&lt;sup&gt;(.*?)&lt;/sup&gt;#is','<sup>\1</sup>',$text);
- 
+    
   //do quoting 
   $text = preg_replace("/\n((&gt;)[^\n]*?\n)+/se","'\n'.quoteformat('\\0').'\n'",$text);
   
@@ -529,9 +557,9 @@ function wp_pages(&$table,&$text) {
   /* $posts = $wpdb->get_results("SELECT id,post_title FROM $wpdb->posts " . 
 			       "WHERE post_status != 'static'"); */
 
+
   foreach($pages as $page)
-    firstpass($table,$text,'/(\b)('.$page->post_title.')(\b)/s',
-	      "<a href=\"?page_id=".$page->id."\">\\1</a>");
+    firstpass($table,$text,'/([^a-zA-Z0-9]'.$page->post_title.'[^a-zA-Z0-9])/s',"<a href=\"?page_id=".$page->id."\">\\1</a>");
   /* foreach($posts as $post)
     firstpass($table,$text,'/('.$post->post_title.')/s',
 	      "<a href=\"?p=".$post->id."\">\\1</a>"); */
